@@ -24,6 +24,12 @@ To use a different port, set `PORT`, for example `PORT=4000 npm start`.
   (it's git-ignored), so updating never touches your trades.
 - **Using several computers?** See [Using it on several computers](#using-it-on-several-computers).
 
+### Windows: start with a double-click
+
+Double-click **`Start Journal.bat`** in the project folder. It starts the journal and opens your browser.
+For a desktop shortcut, right-click the file → **Show more options** → **Send to** → **Desktop (create shortcut)**.
+Close the black window (or press Ctrl+C in it) to stop the journal.
+
 ## Where your data lives
 
 Everything is stored in one folder, `./data` by default:
