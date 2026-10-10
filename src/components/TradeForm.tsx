@@ -403,7 +403,8 @@ function TickerInput({
   const [hi, setHi] = useState(-1);
   const ref = useRef<HTMLInputElement>(null);
   const q = value.trim().toUpperCase();
-  const matches = (q ? options.filter((o) => o.startsWith(q) && o !== q) : options).slice(0, 6);
+  const [browse, setBrowse] = useState(false); // ↓ in an empty field lists recent tickers
+  const matches = (q ? options.filter((o) => o.startsWith(q) && o !== q) : browse ? options : []).slice(0, 6);
   const show = open && matches.length > 0;
 
   const pick = (v: string) => {
@@ -425,12 +426,14 @@ function TickerInput({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => {
+          setBrowse(false);
           setTimeout(() => setOpen(false), 120);
           onBlur();
         }}
         onKeyDown={(e) => {
-          if (e.key === 'ArrowDown' && matches.length) {
+          if (e.key === 'ArrowDown' && (matches.length || (!q && options.length))) {
             e.preventDefault();
+            setBrowse(true);
             setOpen(true);
             setHi((h) => Math.min(h + 1, matches.length - 1));
           } else if (e.key === 'ArrowUp' && show) {
@@ -447,7 +450,7 @@ function TickerInput({
             setOpen(false);
           }
         }}
-        className={`w-full font-medium uppercase tracking-wide ${invalid ? 'border-red-500' : ''}`}
+        className={`w-full font-medium uppercase tracking-wide placeholder:normal-case placeholder:tracking-normal ${invalid ? 'border-red-500' : ''}`}
         placeholder={options.length ? `e.g. ${options.slice(0, 3).join(', ')}` : 'e.g. BHP'}
         autoComplete="off"
         spellCheck={false}
