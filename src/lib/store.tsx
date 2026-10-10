@@ -25,7 +25,7 @@ export function JournalProvider({
 }) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [settings, setSettings] = useState<Settings>({ default_currency: 'AUD' });
+  const [settings, setSettings] = useState<Settings>({});
   const [loaded, setLoaded] = useState(false);
 
   const reload = useCallback(async () => {

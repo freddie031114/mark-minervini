@@ -7,8 +7,8 @@ import { api, ApiError, type TradeInput } from '../lib/api';
 import { canBeCredit, isOption, parseNum } from '../lib/calc';
 import { today, modKey } from '../lib/format';
 import {
-  CURRENCIES, EMOTIONS, GRADES, STRUCTURES, THESIS_RIGHT,
-  type Currency, type Structure, type Trade,
+  EMOTIONS, GRADES, STRUCTURES, THESIS_RIGHT,
+  type Structure, type Trade,
 } from '../lib/types';
 
 type Num = string;
@@ -16,7 +16,6 @@ interface FormState {
   ticker: string;
   structure: Structure | null;
   is_credit: boolean;
-  currency: Currency;
   entry_price: Num;
   quantity: Num;
   setup_tag: string | null;
@@ -43,13 +42,12 @@ interface FormState {
 
 const s = (v: unknown) => (v == null ? '' : String(v));
 
-function initialState(trade: Trade | undefined, defaults: { structure: Structure; currency: Currency; setup_tag: string | null }): FormState {
+function initialState(trade: Trade | undefined, defaults: { structure: Structure; setup_tag: string | null }): FormState {
   if (trade)
     return {
       ticker: trade.ticker,
       structure: trade.structure,
       is_credit: trade.is_credit,
-      currency: trade.currency,
       entry_price: s(trade.entry_price),
       quantity: s(trade.quantity),
       setup_tag: trade.setup_tag,
@@ -73,7 +71,7 @@ function initialState(trade: Trade | undefined, defaults: { structure: Structure
       change_note: s(trade.change_note),
     };
   return {
-    ticker: '', structure: defaults.structure, is_credit: false, currency: defaults.currency,
+    ticker: '', structure: defaults.structure, is_credit: false,
     entry_price: '', quantity: '', setup_tag: defaults.setup_tag, grade: null, planned: null, emotion: null,
     thesis: '', legs: '', expiry: '', stop_price: '', target_price: '', position_pct: '', entry_date: today(),
     gamma_notes: '', notes: '', exit_price: '', exit_date: '', fees: '', thesis_right: null, followed_plan: null, change_note: '',
@@ -96,7 +94,6 @@ export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => vo
   const [f, setF] = useState<FormState>(() =>
     initialState(trade, {
       structure: settings.last_structure ?? 'Stock Long',
-      currency: settings.last_currency ?? settings.default_currency ?? 'AUD',
       setup_tag: settings.last_setup_tag && tags.some((t) => t.name === settings.last_setup_tag) ? settings.last_setup_tag : null,
     }),
   );
@@ -153,7 +150,6 @@ export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => vo
       ticker: f.ticker.trim().toUpperCase(),
       structure: f.structure!,
       is_credit: creditable && f.is_credit,
-      currency: f.currency,
       entry_price: parseNum(f.entry_price)!,
       quantity: parseNum(f.quantity)!,
       setup_tag: f.setup_tag,
@@ -247,15 +243,12 @@ export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => vo
             )}
           </div>
         </Field>
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Field label={opt ? `${f.is_credit && creditable ? 'Credit' : 'Price'} per contract` : `Entry price${f.is_credit && creditable ? ' (credit)' : ''}`} error={shown('entry_price')}>
             {numInput('entry_price', { placeholder: opt ? 'e.g. 2.35' : 'e.g. 45.20' })}
           </Field>
           <Field label={opt ? 'Contracts' : f.structure === 'Other' ? 'Quantity' : 'Shares'} error={shown('quantity')}>
             {numInput('quantity', { placeholder: opt ? 'e.g. 2' : 'e.g. 200' })}
-          </Field>
-          <Field label="Currency">
-            <ChipGroup options={CURRENCIES} value={f.currency} onChange={(v) => v && set('currency', v)} ariaLabel="Currency" />
           </Field>
         </div>
 

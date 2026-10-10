@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS trades (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   ticker        TEXT    NOT NULL,
   structure     TEXT    NOT NULL,
-  currency      TEXT    NOT NULL DEFAULT 'AUD',
   is_credit     INTEGER NOT NULL DEFAULT 0,
   entry_price   REAL    NOT NULL,
   quantity      REAL    NOT NULL,
@@ -75,7 +74,7 @@ CREATE TABLE IF NOT EXISTS settings (
 
 // Column lists: what a client may write.
 export const ENTRY_FIELDS = [
-  'ticker', 'structure', 'currency', 'is_credit', 'entry_price', 'quantity', 'entry_date',
+  'ticker', 'structure', 'is_credit', 'entry_price', 'quantity', 'entry_date',
   'setup_tag', 'grade', 'planned', 'emotion', 'thesis', 'legs', 'expiry', 'stop_price',
   'target_price', 'position_pct', 'gamma_notes', 'notes',
 ];
@@ -94,9 +93,6 @@ export function createStore(dataDir) {
   if (db.prepare('SELECT COUNT(*) AS n FROM tags').get().n === 0) {
     const ins = db.prepare('INSERT INTO tags (name, sort_order) VALUES (?, ?)');
     SEED_TAGS.forEach((t, i) => ins.run(t, i));
-  }
-  if (!db.prepare("SELECT 1 FROM settings WHERE key='default_currency'").get()) {
-    db.prepare("INSERT INTO settings (key, value) VALUES ('default_currency', 'AUD')").run();
   }
 
   // node:sqlite has no db.transaction helper, so do it by hand.

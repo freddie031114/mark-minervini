@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useJournal } from '../lib/store';
 import { api, ApiError } from '../lib/api';
-import { ChipGroup } from '../components/ChipGroup';
-import { CURRENCIES } from '../lib/types';
 import { download, tradesToCsv } from '../lib/csv';
 import { today } from '../lib/format';
 
 export function SettingsPage() {
-  const { trades, tags, settings, reload } = useJournal();
+  const { trades, tags, reload } = useJournal();
   const [newTag, setNewTag] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string; details?: string[] } | null>(null);
   const [info, setInfo] = useState<{ dataDir: string; driver: string } | null>(null);
@@ -95,16 +93,7 @@ export function SettingsPage() {
         </form>
       </Section>
 
-      <Section title="Default currency" sub="Used for new trades and as the Stats page default. Each trade can still be AUD or USD.">
-        <ChipGroup
-          options={CURRENCIES}
-          value={settings.default_currency}
-          onChange={(v) => v && run(() => api.saveSettings({ default_currency: v }))}
-          ariaLabel="Default currency"
-        />
-      </Section>
-
-      <Section title="Export / import" sub="CSV is for spreadsheets. JSON is a full restore point for trades, tags and settings (screenshot files stay in the data folder).">
+      <Section title="Export / import" sub="CSV is for spreadsheets. JSON is a full restore point for trades and tags (screenshot files stay in the data folder).">
         <div className="flex flex-wrap gap-2">
           <button className="btn" onClick={() => download(`trading-journal-${today()}.csv`, tradesToCsv(trades), 'text/csv')}>
             Export CSV

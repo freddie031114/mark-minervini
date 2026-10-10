@@ -16,8 +16,7 @@ function rng(seed) {
 const day = (d) => d.toISOString().slice(0, 10);
 const addDays = (d, n) => new Date(d.getTime() + n * 86_400_000);
 
-const AU = [['BHP', 45], ['CSL', 280], ['PLS', 3.2], ['WTC', 110], ['XRO', 150], ['NXT', 17], ['ZIP', 3], ['MIN', 40]];
-const US = [['NVDA', 130], ['TSLA', 240], ['AAPL', 210], ['AMD', 150], ['META', 560], ['SPY', 570], ['PLTR', 45]];
+const US = [['NVDA', 130], ['TSLA', 240], ['AAPL', 210], ['AMD', 150], ['META', 560], ['SPY', 570], ['PLTR', 45], ['MSFT', 420], ['AMZN', 185], ['CRWD', 330]];
 const TAGS = ['Breakout', 'Pullback', 'Base/VCP', 'Earnings', 'Catalyst', 'Reversal', 'Thesis/LEAP'];
 const EMO = ['Calm', 'Confident', 'FOMO', 'Revenge', 'Bored', 'Anxious'];
 
@@ -41,12 +40,11 @@ export function buildDemo(today = new Date()) {
   const trades = [];
   const N = 48;
   for (let i = 0; i < N; i++) {
-    const usd = r() < 0.45;
-    const [ticker, px] = pick(usd ? US : AU);
-    let structure;
+    const [ticker, px] = pick(US);
     const sr = r();
-    if (!usd) structure = sr < 0.85 ? 'Stock Long' : 'Stock Short';
-    else structure = sr < 0.3 ? 'Stock Long' : sr < 0.5 ? 'Call Spread' : sr < 0.62 ? 'Put Spread' : sr < 0.8 ? 'Long Call' : sr < 0.9 ? 'LEAP Call' : 'Long Put';
+    const structure =
+      sr < 0.4 ? 'Stock Long' : sr < 0.48 ? 'Stock Short' : sr < 0.62 ? 'Call Spread' : sr < 0.72 ? 'Put Spread'
+        : sr < 0.85 ? 'Long Call' : sr < 0.93 ? 'LEAP Call' : 'Long Put';
     const isOpt = !structure.startsWith('Stock');
     const isCredit = structure === 'Put Spread' && r() < 0.6;
     const grade = r() < 0.35 ? 'A' : r() < 0.6 ? 'B' : 'C';
@@ -65,7 +63,7 @@ export function buildDemo(today = new Date()) {
     let entry, qty, stop, target, legs = null, expiry = null;
     if (!isOpt) {
       entry = +(px * (0.9 + r() * 0.2)).toFixed(2);
-      qty = Math.round((usd ? 8000 : 12000) / entry / 10) * 10 || 10;
+      qty = Math.max(1, Math.round(10000 / entry / 5) * 5);
       const short = structure === 'Stock Short';
       stop = +(entry * (short ? 1.06 : 0.94)).toFixed(2);
       target = +(entry * (short ? 0.85 : 1.2)).toFixed(2);
@@ -92,7 +90,7 @@ export function buildDemo(today = new Date()) {
     }
 
     const t = {
-      ticker, structure, currency: usd ? 'USD' : 'AUD', is_credit: isCredit,
+      ticker, structure, is_credit: isCredit,
       entry_price: entry, quantity: qty, entry_date: day(entryDate),
       setup_tag: tag, grade, planned, emotion,
       thesis: `${tag} ${structure.startsWith('Stock') ? 'entry' : 'play'} on ${ticker}`,
@@ -114,7 +112,7 @@ export function buildDemo(today = new Date()) {
         status: 'closed',
         exit_price: +exit.toFixed(2),
         exit_date: day(addDays(entryDate, Math.min(hold, entryDaysAgo - 1))),
-        fees: isOpt ? +(qty * 2 * 1.5).toFixed(2) : usd ? 2 : 9.95,
+        fees: isOpt ? +(qty * 2 * 1.3).toFixed(2) : 2,
         thesis_right: thesisRight,
         followed_plan: planned ? r() < 0.8 : r() < 0.3,
         change_note: win ? (r() < 0.5 ? 'Size up on A setups' : null) : pick(['Respect the stop', 'Wait for confirmation', 'Smaller size', 'Skip impulse entries']),

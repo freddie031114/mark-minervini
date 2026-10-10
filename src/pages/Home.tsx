@@ -82,7 +82,7 @@ export function Home() {
                     <Dte dte={isOption(t.structure) || t.expiry ? d.dte : null} />
                   </td>
                   <td className="td text-right text-zinc-300">
-                    {num(t.entry_price, 4)} <span className="text-xs text-zinc-500">{t.currency}</span>
+                    {num(t.entry_price, 4)}
                   </td>
                   <td className="td text-right text-zinc-300">
                     {num(t.quantity, 4)}

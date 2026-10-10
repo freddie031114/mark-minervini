@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createStore } from './db.js';
-import { normalizeTrade, validateImport, SHOT_LABELS, CURRENCIES, STRUCTURES } from './validate.js';
+import { normalizeTrade, validateImport, SHOT_LABELS, STRUCTURES } from './validate.js';
 import { loadDemo } from './demo.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,10 +39,9 @@ app.post('/api/trades', (req, res) => {
   const { value, errors } = normalizeTrade(req.body, { required: ['ticker', 'structure', 'entry_price', 'quantity'] });
   if (Object.keys(errors).length) return bad(res, 'Please fix the highlighted fields', errors);
   value.entry_date ??= localToday();
-  value.currency ??= store.getSettings().default_currency || 'AUD';
   value.status = 'open';
   const id = store.insertTrade(value);
-  store.setSettings({ last_structure: value.structure, last_currency: value.currency, last_setup_tag: value.setup_tag ?? null });
+  store.setSettings({ last_structure: value.structure, last_setup_tag: value.setup_tag ?? null });
   res.status(201).json(store.getTrade(id));
 });
 
@@ -130,11 +129,6 @@ app.get('/api/settings', (_req, res) => res.json(store.getSettings()));
 app.put('/api/settings', (req, res) => {
   const b = req.body || {};
   const patch = {};
-  if ('default_currency' in b) {
-    if (!CURRENCIES.includes(b.default_currency)) return bad(res, 'Currency must be AUD or USD');
-    patch.default_currency = b.default_currency;
-    patch.last_currency = b.default_currency;
-  }
   if ('last_structure' in b && STRUCTURES.includes(b.last_structure)) patch.last_structure = b.last_structure;
   store.setSettings(patch);
   res.json(store.getSettings());
@@ -142,12 +136,11 @@ app.put('/api/settings', (req, res) => {
 
 /* ---- Export / import ---- */
 function exportData() {
-  const s = store.getSettings();
   return {
     app: 'trading-journal',
     version: 1,
     exported_at: new Date().toISOString(),
-    settings: { default_currency: s.default_currency || 'AUD' },
+    settings: {},
     tags: store.listTags().map((t) => t.name),
     trades: store.listTrades().map(({ id, screenshots, ...t }) => ({
       id,

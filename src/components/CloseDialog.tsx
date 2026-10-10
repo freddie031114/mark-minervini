@@ -75,7 +75,7 @@ export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }
       >
         <div className="text-xs text-zinc-500">
           Entry {trade.entry_price} × {trade.quantity} on {trade.entry_date}
-          {trade.stop_price != null && ` · stop ${trade.stop_price}`} · {trade.currency}
+          {trade.stop_price != null && ` · stop ${trade.stop_price}`}
           {trade.is_credit && ' · credit'}
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -91,7 +91,7 @@ export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }
         </div>
         {preview && (
           <div className="rounded bg-zinc-950/60 px-3 py-2 text-sm">
-            P&amp;L <span className={`font-semibold ${pnlClass(preview.pnl)}`}>{money(preview.pnl, trade.currency, true)}</span>
+            P&amp;L <span className={`font-semibold ${pnlClass(preview.pnl)}`}>{money(preview.pnl, true)}</span>
             <span className="text-zinc-500"> · {pct(preview.pct)} · {rFmt(preview.r)} · {preview.days}d held</span>
           </div>
         )}

@@ -16,6 +16,15 @@ Later runs only need `npm start`. To skip the rebuild, use `npm run serve`.
 
 To use a different port, set `PORT`, for example `PORT=4000 npm start`.
 
+## Day-to-day use
+
+- **Start it:** `npm start` in the project folder, then open http://localhost:3000. Leave the terminal
+  open while you journal. Press Ctrl+C to stop it.
+- **Get updates:** `git pull && npm install && npm start`. Your data folder is never part of the code
+  (it's git-ignored), so updating never touches your trades.
+- **Recommended:** keep your data outside the project folder, ideally somewhere backed up, such as iCloud Drive or Dropbox.
+  See [Change the data folder](#change-the-data-folder) below.
+
 ## Where your data lives
 
 Everything is stored in one folder, `./data` by default:
@@ -50,7 +59,7 @@ In Settings you can also export:
 
 - **Export CSV**: one row per trade, including computed P&L, P&L %, R and holding days, and
   screenshot filenames in a `screenshots` column. Use it with spreadsheets.
-- **Export JSON**: a full restore point for trades, tags and default currency.
+- **Export JSON**: a full restore point for trades and tags.
   **Import JSON** restores from it. The file is validated first, and nothing changes if it's wrong.
   An import **replaces** all current trades. Screenshot images are not inside the JSON (only
   their filenames are), so keep the `screenshots/` folder alongside it.
@@ -86,12 +95,12 @@ All calculations are in `src/lib/calc.ts` (tested in `src/lib/calc.test.ts`, run
 - P&L, credit spreads and Stock Short: `(entry − exit) × qty × multiplier − fees`.
 - P&L %: P&L ÷ (entry × qty × multiplier). For credit spreads, it's blank unless a stop is set (then P&L ÷ stop risk).
 - R: P&L ÷ (|entry − stop| × qty × multiplier), only when a stop is entered.
-- Stats are per currency (AUD / USD) with no FX conversion. Breakeven trades count as neither win nor loss.
+- All amounts are in USD. Breakeven trades count as neither win nor loss.
   Groups with fewer than 10 trades are marked "small sample".
 
 ## Demo data
 
-Settings → **Load demo data** adds about 48 flagged trades (marked DEMO).
+Settings → **Load demo data** adds 48 flagged trades (marked DEMO).
 **Clear demo data** removes only those, along with their placeholder images, and never touches your own trades.
 
 ## Development

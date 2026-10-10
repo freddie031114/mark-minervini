@@ -6,7 +6,6 @@ const COLUMNS: [string, (t: Trade, d: ReturnType<typeof derive>) => unknown][] =
   ['ticker', (t) => t.ticker],
   ['structure', (t) => t.structure],
   ['debit_credit', (t) => (t.is_credit ? 'credit' : 'debit')],
-  ['currency', (t) => t.currency],
   ['status', (t) => t.status],
   ['entry_date', (t) => t.entry_date],
   ['entry_price', (t) => t.entry_price],

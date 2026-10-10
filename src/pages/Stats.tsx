@@ -1,42 +1,37 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useJournal } from '../lib/store';
 import { derive } from '../lib/derive';
 import { breakdown, equityCurve, summarize, type Summary } from '../lib/calc';
 import { money, pct, pnlClass } from '../lib/format';
-import { ChipGroup } from '../components/ChipGroup';
-import { CURRENCIES, EMOTIONS, GRADES, THESIS_RIGHT, type Currency, type Trade } from '../lib/types';
+import { EMOTIONS, GRADES, THESIS_RIGHT, type Trade } from '../lib/types';
 
 const SMALL = 10;
 type Item = { t: Trade; pnl: number };
 
 export function Stats() {
-  const { trades, tags, settings } = useJournal();
-  const [cur, setCur] = useState<Currency>(settings.default_currency ?? 'AUD');
+  const { trades, tags } = useJournal();
 
   const items: Item[] = useMemo(
     () =>
       trades
-        .filter((t) => t.status === 'closed' && t.currency === cur)
+        .filter((t) => t.status === 'closed')
         .map((t) => ({ t, pnl: derive(t).pnl ?? 0 })),
-    [trades, cur],
+    [trades],
   );
   const s = useMemo(() => summarize(items.map((i) => i.pnl)), [items]);
   const curve = useMemo(() => equityCurve(items.map((i) => ({ date: i.t.exit_date!, pnl: i.pnl }))), [items]);
-  const fmt = (n: number | null) => money(n, cur, true);
+  const fmt = (n: number | null) => money(n, true);
   const yesNo = (v: boolean | null, y: string, n: string) => (v == null ? null : v ? y : n);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-100">
-          Stats <span className="ml-1 text-sm font-normal text-zinc-500">{s.count} closed trades in {cur}</span>
-        </h1>
-        <ChipGroup options={CURRENCIES} value={cur} onChange={(v) => v && setCur(v)} ariaLabel="Currency" />
-      </div>
+      <h1 className="text-lg font-semibold text-zinc-100">
+        Stats <span className="ml-1 text-sm font-normal text-zinc-500">{s.count} closed trades</span>
+      </h1>
 
       {s.count === 0 ? (
-        <div className="card p-10 text-center text-sm text-zinc-500">No closed {cur} trades yet.</div>
+        <div className="card p-10 text-center text-sm text-zinc-500">No closed trades yet.</div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -50,7 +45,7 @@ export function Stats() {
           {s.count < SMALL && <SmallNote />}
 
           <section className="card p-4">
-            <h2 className="mb-3 text-sm font-medium text-zinc-300">Equity curve · cumulative P&amp;L ({cur})</h2>
+            <h2 className="mb-3 text-sm font-medium text-zinc-300">Equity curve · cumulative P&amp;L</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={curve} margin={{ top: 8, right: 16, bottom: 0, left: 8 }}>
@@ -61,7 +56,7 @@ export function Stats() {
                     tickLine={false}
                     axisLine={false}
                     width={70}
-                    tickFormatter={(v: number) => money(v, cur).replace(/\.\d+$/, '')}
+                    tickFormatter={(v: number) => money(v).replace(/\.\d+$/, '')}
                   />
                   <ReferenceLine y={0} stroke="#52525b" />
                   <Tooltip
@@ -77,12 +72,12 @@ export function Stats() {
           </section>
 
           <div className="grid gap-4 xl:grid-cols-2">
-            <Breakdown title="By setup" items={items} cur={cur} keyOf={(t) => t.setup_tag} order={tags.map((t) => t.name)} />
-            <Breakdown title="By grade" items={items} cur={cur} keyOf={(t) => t.grade} order={[...GRADES]} />
-            <Breakdown title="Planned vs impulse" items={items} cur={cur} keyOf={(t) => yesNo(t.planned, 'Planned', 'Impulse')} order={['Planned', 'Impulse']} />
-            <Breakdown title="By emotional state" items={items} cur={cur} keyOf={(t) => t.emotion} order={[...EMOTIONS]} />
-            <Breakdown title="Followed plan?" items={items} cur={cur} keyOf={(t) => yesNo(t.followed_plan, 'Followed plan', 'Broke plan')} order={['Followed plan', 'Broke plan']} />
-            <ThesisMatrix items={items} cur={cur} />
+            <Breakdown title="By setup" items={items} keyOf={(t) => t.setup_tag} order={tags.map((t) => t.name)} />
+            <Breakdown title="By grade" items={items} keyOf={(t) => t.grade} order={[...GRADES]} />
+            <Breakdown title="Planned vs impulse" items={items} keyOf={(t) => yesNo(t.planned, 'Planned', 'Impulse')} order={['Planned', 'Impulse']} />
+            <Breakdown title="By emotional state" items={items} keyOf={(t) => t.emotion} order={[...EMOTIONS]} />
+            <Breakdown title="Followed plan?" items={items} keyOf={(t) => yesNo(t.followed_plan, 'Followed plan', 'Broke plan')} order={['Followed plan', 'Broke plan']} />
+            <ThesisMatrix items={items} />
           </div>
         </>
       )}
@@ -110,13 +105,11 @@ const SmallTag = () => (
 function Breakdown({
   title,
   items,
-  cur,
   keyOf,
   order,
 }: {
   title: string;
   items: Item[];
-  cur: string;
   keyOf: (t: Trade) => string | null;
   order: string[];
 }) {
@@ -128,12 +121,12 @@ function Breakdown({
   return (
     <section className="card overflow-x-auto">
       <h2 className="px-4 pt-3 text-sm font-medium text-zinc-300">{title}</h2>
-      <BreakdownTable rows={rows} cur={cur} />
+      <BreakdownTable rows={rows} />
     </section>
   );
 }
 
-function BreakdownTable({ rows, cur }: { rows: (Summary & { group: string })[]; cur: string }) {
+function BreakdownTable({ rows }: { rows: (Summary & { group: string })[] }) {
   return (
     <table className="mt-1 w-full text-sm">
       <thead>
@@ -154,8 +147,8 @@ function BreakdownTable({ rows, cur }: { rows: (Summary & { group: string })[]; 
             </td>
             <td className="td text-right text-zinc-400">{r.count}</td>
             <td className="td text-right">{pct(r.winRate, 0).replace('+', '')}</td>
-            <td className={`td text-right font-medium ${pnlClass(r.totalPnl)}`}>{money(r.totalPnl, cur, true)}</td>
-            <td className={`td text-right ${pnlClass(r.expectancy)}`}>{money(r.expectancy, cur, true)}</td>
+            <td className={`td text-right font-medium ${pnlClass(r.totalPnl)}`}>{money(r.totalPnl, true)}</td>
+            <td className={`td text-right ${pnlClass(r.expectancy)}`}>{money(r.expectancy, true)}</td>
           </tr>
         ))}
       </tbody>
@@ -164,7 +157,7 @@ function BreakdownTable({ rows, cur }: { rows: (Summary & { group: string })[]; 
 }
 
 /** Thesis right? × outcome. Highlights the two "luck" cells. */
-function ThesisMatrix({ items, cur }: { items: Item[]; cur: string }) {
+function ThesisMatrix({ items }: { items: Item[] }) {
   const rowsOrder = [...THESIS_RIGHT, '(none)'];
   const cell = (thesis: string, won: boolean) => {
     const g = items.filter((i) => (i.t.thesis_right ?? '(none)') === thesis && (won ? i.pnl > 0 : i.pnl <= 0));
@@ -194,8 +187,8 @@ function ThesisMatrix({ items, cur }: { items: Item[]; cur: string }) {
                   {r}
                   {n < SMALL && <SmallTag />}
                 </td>
-                <MatrixCell c={w} cur={cur} flag={r === 'No' ? 'Wrong but made money' : null} />
-                <MatrixCell c={l} cur={cur} flag={r === 'Yes' ? 'Right but lost money' : null} />
+                <MatrixCell c={w} flag={r === 'No' ? 'Wrong but made money' : null} />
+                <MatrixCell c={l} flag={r === 'Yes' ? 'Right but lost money' : null} />
                 <td className="td text-right">{n ? `${Math.round((w.n / n) * 100)}%` : '—'}</td>
               </tr>
             );
@@ -209,12 +202,12 @@ function ThesisMatrix({ items, cur }: { items: Item[]; cur: string }) {
   );
 }
 
-function MatrixCell({ c, cur, flag }: { c: { n: number; pnl: number }; cur: string; flag: string | null }) {
+function MatrixCell({ c, flag }: { c: { n: number; pnl: number }; flag: string | null }) {
   const hl = flag && c.n > 0;
   return (
     <td className={`td text-right ${hl ? 'bg-amber-500/10 ring-1 ring-inset ring-amber-500/50' : ''}`} title={flag ?? undefined}>
       <span className="text-zinc-300">{c.n}</span>
-      <span className={`ml-2 ${pnlClass(c.n ? c.pnl : null)}`}>{c.n ? money(c.pnl, cur, true) : ''}</span>
+      <span className={`ml-2 ${pnlClass(c.n ? c.pnl : null)}`}>{c.n ? money(c.pnl, true) : ''}</span>
       {hl && <div className="text-[10px] text-amber-300">{flag}</div>}
     </td>
   );

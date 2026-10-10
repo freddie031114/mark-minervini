@@ -66,12 +66,7 @@ export function Journal() {
   const [sel, setSel] = useRowNav(rows, (r) => openDetail(r.t.id));
   const active = Object.values(flt).some(Boolean);
 
-  // Totals per currency for the filtered set.
-  const totals = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) m.set(r.t.currency, (m.get(r.t.currency) ?? 0) + (r.d.pnl ?? 0));
-    return [...m.entries()];
-  }, [rows]);
+  const total = useMemo(() => rows.reduce((a, r) => a + (r.d.pnl ?? 0), 0), [rows]);
 
   return (
     <div>
@@ -105,11 +100,7 @@ export function Journal() {
           </button>
         )}
         <div className="ml-auto text-sm text-zinc-400">
-          {totals.map(([c, v]) => (
-            <span key={c} className="ml-3">
-              {c} <span className={pnlClass(v)}>{money(v, c, true)}</span>
-            </span>
-          ))}
+          Total <span className={pnlClass(total)}>{money(total, true)}</span>
         </div>
       </div>
 
@@ -163,7 +154,7 @@ export function Journal() {
                   <td className="td text-right text-zinc-400">
                     {num(t.entry_price, 4)} → {num(t.exit_price, 4)}
                   </td>
-                  <td className={`td text-right font-medium ${pnlClass(d.pnl)}`}>{money(d.pnl, t.currency, true)}</td>
+                  <td className={`td text-right font-medium ${pnlClass(d.pnl)}`}>{money(d.pnl, true)}</td>
                   <td className={`td text-right ${pnlClass(d.pnlPct)}`}>{pct(d.pnlPct)}</td>
                   <td className={`td text-right ${pnlClass(d.r)}`}>{rFmt(d.r)}</td>
                   <td className="td text-right text-zinc-400">{d.days}</td>

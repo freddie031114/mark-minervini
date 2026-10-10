@@ -2,7 +2,6 @@
 import { ENTRY_FIELDS, CLOSE_FIELDS } from './db.js';
 
 export const STRUCTURES = ['Stock Long', 'Stock Short', 'Long Call', 'Long Put', 'Call Spread', 'Put Spread', 'LEAP Call', 'Other'];
-export const CURRENCIES = ['AUD', 'USD'];
 export const SHOT_LABELS = ['Entry', 'Exit', 'Gamma', 'Other'];
 const GRADES = ['A', 'B', 'C'];
 const THESIS_RIGHT = ['Yes', 'Partly', 'No'];
@@ -43,8 +42,6 @@ export function normalizeTrade(input, { required = [] } = {}) {
         v = String(v).toUpperCase();
       } else if (k === 'structure') {
         if (!STRUCTURES.includes(v)) errors[k] = 'Unknown structure';
-      } else if (k === 'currency') {
-        if (!CURRENCIES.includes(v)) errors[k] = 'AUD or USD';
       } else if (k === 'grade') {
         if (!GRADES.includes(v)) errors[k] = 'A, B or C';
       } else if (k === 'thesis_right') {
@@ -113,9 +110,6 @@ export function validateImport(json) {
 
   const tags = (json.tags || []).map((x) => (typeof x === 'string' ? x : x?.name)).filter((x) => typeof x === 'string' && x.trim());
   const settings = {};
-  if (json.settings && typeof json.settings === 'object') {
-    if (CURRENCIES.includes(json.settings.default_currency)) settings.default_currency = json.settings.default_currency;
-  }
   if (errors.length) return { ok: false, errors: errors.slice(0, 30).concat(errors.length > 30 ? [`…and ${errors.length - 30} more`] : []) };
   return { ok: true, errors: [], data: { trades, tags: [...new Set(tags)], settings } };
 }

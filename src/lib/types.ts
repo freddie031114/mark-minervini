@@ -10,9 +10,6 @@ export const STRUCTURES = [
 ] as const;
 export type Structure = (typeof STRUCTURES)[number];
 
-export const CURRENCIES = ['AUD', 'USD'] as const;
-export type Currency = (typeof CURRENCIES)[number];
-
 export const GRADES = ['A', 'B', 'C'] as const;
 export const EMOTIONS = ['Calm', 'Confident', 'FOMO', 'Revenge', 'Bored', 'Anxious'] as const;
 export const THESIS_RIGHT = ['Yes', 'Partly', 'No'] as const;
@@ -32,7 +29,6 @@ export interface Trade {
   id: number;
   ticker: string;
   structure: Structure;
-  currency: Currency;
   is_credit: boolean;
   entry_price: number;
   quantity: number;
@@ -68,8 +64,6 @@ export interface Tag {
 }
 
 export interface Settings {
-  default_currency: Currency;
   last_structure?: Structure;
-  last_currency?: Currency;
   last_setup_tag?: string | null;
 }

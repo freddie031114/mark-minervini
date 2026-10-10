@@ -3,13 +3,12 @@ export function today(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-const SYMBOL: Record<string, string> = { AUD: '$', USD: 'US$' };
-const numFmt = new Intl.NumberFormat('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const numFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Money with a sign: "+$1,234.50", "−US$80.00". AUD is the plain "$". */
-export function money(n: number | null | undefined, currency = 'AUD', signed = false): string {
+/** Money (USD) with an optional sign: "+$1,234.50", "−$80.00". */
+export function money(n: number | null | undefined, signed = false): string {
   if (n == null || !Number.isFinite(n)) return '—';
-  const s = `${SYMBOL[currency] ?? currency + ' '}${numFmt.format(Math.abs(n))}`;
+  const s = `$${numFmt.format(Math.abs(n))}`;
   if (n < 0) return `−${s}`;
   return signed && n > 0 ? `+${s}` : s;
 }

@@ -73,7 +73,7 @@ export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }
 
           {trade.status === 'closed' && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Stat label="P&L" value={money(d.pnl, trade.currency, true)} cls={pnlClass(d.pnl)} />
+              <Stat label="P&L" value={money(d.pnl, true)} cls={pnlClass(d.pnl)} />
               <Stat label="P&L %" value={pct(d.pnl == null ? null : d.pnlPct)} cls={pnlClass(d.pnlPct)} />
               <Stat label="R multiple" value={rFmt(d.r)} cls={pnlClass(d.r)} />
               <Stat label="Held" value={`${d.days ?? '—'} days`} />
@@ -81,7 +81,7 @@ export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }
           )}
 
           <Grid>
-            <Item k="Entry" v={`${num(trade.entry_price, 4)} ${trade.currency}`} />
+            <Item k="Entry" v={num(trade.entry_price, 4)} />
             <Item k={opt ? 'Contracts' : 'Quantity'} v={num(trade.quantity, 4)} />
             <Item k="Entry date" v={trade.entry_date} />
             {opt && <Item k="Expiry" v={trade.expiry ? `${trade.expiry}${trade.status === 'open' && d.dte != null ? ` (${d.dte}d)` : ''}` : null} />}
@@ -97,7 +97,7 @@ export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }
               <>
                 <Item k="Exit" v={num(trade.exit_price, 4)} />
                 <Item k="Exit date" v={trade.exit_date} />
-                <Item k="Fees" v={money(trade.fees, trade.currency)} />
+                <Item k="Fees" v={money(trade.fees)} />
                 <Item k="Thesis right?" v={trade.thesis_right} />
                 <Item k="Followed plan?" v={bool(trade.followed_plan, 'Yes', 'No')} />
               </>
