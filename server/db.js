@@ -87,7 +87,9 @@ const now = () => new Date().toISOString();
 export function createStore(dataDir) {
   fs.mkdirSync(path.join(dataDir, 'screenshots'), { recursive: true });
   const { db, driver } = openDatabase(path.join(dataDir, 'journal.db'));
-  db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+  // Rollback-journal mode (not WAL): every commit lands in journal.db itself, so a synced
+  // folder (Dropbox, iCloud, …) never holds a database whose recent writes sit in a side file.
+  db.exec('PRAGMA journal_mode = DELETE; PRAGMA synchronous = FULL; PRAGMA foreign_keys = ON;');
   db.exec(SCHEMA);
 
   if (db.prepare('SELECT COUNT(*) AS n FROM tags').get().n === 0) {
@@ -241,7 +243,7 @@ export function createStore(dataDir) {
   }
 
   return {
-    driver, tx, listTrades, getTrade, insertTrade, updateTrade, deleteTrade,
+    driver, close: () => db.close(), tx, listTrades, getTrade, insertTrade, updateTrade, deleteTrade,
     addScreenshot, getScreenshot, deleteScreenshot,
     listTags, addTag, renameTag, deleteTag, getSettings, setSettings,
     demoScreenshotFiles, clearDemo, replaceAll,

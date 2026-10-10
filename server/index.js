@@ -2,16 +2,29 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createStore } from './db.js';
 import { normalizeTrade, validateImport, SHOT_LABELS, STRUCTURES } from './validate.js';
 import { loadDemo } from './demo.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DATA_DIR = path.resolve(ROOT, process.env.JOURNAL_DATA_DIR || 'data');
+const dataSetting = (process.env.JOURNAL_DATA_DIR || '').trim() || 'data';
+const DATA_DIR = path.resolve(ROOT, dataSetting.replace(/^~(?=$|[\\/])/, os.homedir()));
 const SHOTS_DIR = path.join(DATA_DIR, 'screenshots');
 const DIST = path.join(ROOT, 'dist');
 const PORT = Number(process.env.PORT) || 3000;
+
+// Guard for synced folders: screenshots present but no database means the database hasn't
+// synced/downloaded yet. Starting anyway would create an empty journal next to your data.
+const dbFile = path.join(DATA_DIR, 'journal.db');
+const hasShots = fs.existsSync(SHOTS_DIR) && fs.readdirSync(SHOTS_DIR).length > 0;
+if (!fs.existsSync(dbFile) && (hasShots || fs.existsSync(path.join(DATA_DIR, '.journal.db.icloud')))) {
+  console.error(`\nNot starting: ${DATA_DIR} has screenshots but no journal.db.`);
+  console.error('Your sync app probably has not downloaded the database yet. Wait for it to finish');
+  console.error('(in iCloud, right-click the folder → Keep Downloaded), then run npm start again.\n');
+  process.exit(1);
+}
 
 const store = createStore(DATA_DIR);
 const app = express();
@@ -191,7 +204,18 @@ if (fs.existsSync(DIST)) {
   app.get('/', (_req, res) => res.send('Front end not built. Run `npm start` (it builds first).'));
 }
 
-app.listen(PORT, '127.0.0.1', () => {
+const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`Trading journal running at http://localhost:${PORT}`);
   console.log(`Data folder: ${DATA_DIR} (sqlite driver: ${store.driver})`);
+  console.log('Press Ctrl+C to stop.');
 });
+
+// Close the database cleanly on Ctrl+C so the synced file is complete.
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, () => {
+    server.close();
+    store.close();
+    console.log('\nJournal stopped. Safe to open it on another computer once your sync finishes.');
+    process.exit(0);
+  });
+}

@@ -5,7 +5,7 @@ It has no accounts and no cloud: everything lives in one folder on your laptop.
 
 ## Run it
 
-Requires Node.js 22 or newer.
+Requires Node.js 22.9 or newer (any current LTS).
 
 ```bash
 npm install && npm start
@@ -22,8 +22,7 @@ To use a different port, set `PORT`, for example `PORT=4000 npm start`.
   open while you journal. Press Ctrl+C to stop it.
 - **Get updates:** `git pull && npm install && npm start`. Your data folder is never part of the code
   (it's git-ignored), so updating never touches your trades.
-- **Recommended:** keep your data outside the project folder, ideally somewhere backed up, such as iCloud Drive or Dropbox.
-  See [Change the data folder](#change-the-data-folder) below.
+- **Using several computers?** See [Using it on several computers](#using-it-on-several-computers).
 
 ## Where your data lives
 
@@ -37,18 +36,48 @@ data/
 
 ### Change the data folder
 
-Set `JOURNAL_DATA_DIR` to point it anywhere, such as a synced folder:
+Copy `.env.example` to `.env` in the project folder and set the path:
 
-```bash
-JOURNAL_DATA_DIR=~/Dropbox/trading-journal npm start
+```
+JOURNAL_DATA_DIR=~/Dropbox/TradingJournal
 ```
 
-On Windows PowerShell, run `$env:JOURNAL_DATA_DIR="C:\Users\me\Dropbox\trading-journal"; npm start`.
+After that, `npm start` always uses that folder. `.env` stays on that computer and is never committed.
+You can also set `JOURNAL_DATA_DIR` as an environment variable. Settings → Data folder shows the folder in use.
 
-Relative paths are resolved from the project folder. Settings → Data folder shows the folder in use.
+## Using it on several computers
 
-> If you use a synced folder, run the journal on one machine at a time. SQLite does not
-> like two computers writing to the same file at once.
+Install the app on each computer and point them all at **one shared folder** in Dropbox, Google Drive
+or iCloud Drive. Every computer then sees the same trades and screenshots.
+
+**One-time setup on each computer:**
+
+1. Install [Node.js](https://nodejs.org) (LTS) and [Git](https://git-scm.com).
+2. Get the app:
+   ```bash
+   git clone https://github.com/freddie031114/mark-minervini.git trading-journal
+   cd trading-journal
+   npm install
+   ```
+3. Create `.env` (copy `.env.example`) with the shared folder, using that computer's path to it:
+   - Mac + Dropbox: `JOURNAL_DATA_DIR=~/Dropbox/TradingJournal`
+   - Mac + iCloud Drive: `JOURNAL_DATA_DIR=~/Library/Mobile Documents/com~apple~CloudDocs/TradingJournal`
+   - Windows + Dropbox: `JOURNAL_DATA_DIR=C:\Users\yourname\Dropbox\TradingJournal`
+4. Make sure the sync app keeps that folder **fully downloaded**, not online-only:
+   - iCloud: right-click the folder → **Keep Downloaded**.
+   - Dropbox / Google Drive: mark it **Available offline**.
+5. `npm start`, then open http://localhost:3000.
+
+**The rules that keep your data safe:**
+
+- **Run it on one computer at a time.** Stop it with **Ctrl+C** before you switch.
+- **Let the sync finish** (the sync icon goes quiet) before starting it on the other computer.
+- If you ever see a "conflicted copy" of `journal.db` in the folder, two computers wrote at once.
+  Keep the newer one and use Settings → Export/Import if you need to merge by hand.
+
+The app helps: every save goes straight into `journal.db` (no side files that could sync separately),
+Ctrl+C closes the database cleanly, and it refuses to start if the folder has screenshots but no
+database yet (the sync hasn't caught up), rather than creating an empty journal.
 
 ## Backing up
 

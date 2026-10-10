@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "vite build && node server/index.js",
-    "serve": "node server/index.js",
+    "start": "vite build && node --env-file-if-exists=.env server/index.js",
+    "serve": "node --env-file-if-exists=.env server/index.js",
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
@@ -32,6 +32,6 @@
     "vitest": "^5.0.3"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.9"
   }
 }
