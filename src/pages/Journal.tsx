@@ -84,7 +84,7 @@ export function Journal() {
             if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
           }}
         />
-        <Select value={flt.setup} onChange={(v) => set('setup', v)} placeholder="All setups" options={[...tags.map((t) => t.name), '(none)']} />
+        <Select value={flt.setup} onChange={(v) => set('setup', v)} placeholder="All setups" options={[...tags, '(none)']} />
         <Select value={flt.grade} onChange={(v) => set('grade', v)} placeholder="All grades" options={[...GRADES, '(none)']} />
         <Select value={flt.outcome} onChange={(v) => set('outcome', v)} placeholder="All outcomes" options={['Win', 'Loss', 'Breakeven']} />
         <Select value={flt.planned} onChange={(v) => set('planned', v)} placeholder="Planned + impulse" options={['Planned', 'Impulse']} />

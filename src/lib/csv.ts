@@ -32,7 +32,7 @@ const COLUMNS: [string, (t: Trade, d: ReturnType<typeof derive>) => unknown][] =
   ['thesis_right', (t) => t.thesis_right],
   ['followed_plan', (t) => (t.followed_plan == null ? '' : t.followed_plan ? 'yes' : 'no')],
   ['what_id_change', (t) => t.change_note],
-  ['screenshots', (t) => t.screenshots.map((s) => s.filename).join(';')],
+  ['screenshots', (t) => t.screenshots.map((s) => s.label + (s.caption ? `: ${s.caption}` : '')).join('; ')],
   ['is_demo', (t) => (t.is_demo ? 1 : 0)],
 ];
 

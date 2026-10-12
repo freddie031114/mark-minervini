@@ -3,7 +3,7 @@ import { Modal } from './Modal';
 import { ChipGroup } from './ChipGroup';
 import { Screenshots, usePendingShots } from './Screenshots';
 import { useJournal } from '../lib/store';
-import { api, ApiError, type TradeInput } from '../lib/api';
+import { api, type TradeInput } from '../lib/api';
 import { canBeCredit, isOption, parseNum } from '../lib/calc';
 import { today, modKey } from '../lib/format';
 import {
@@ -88,13 +88,13 @@ export function numError(v: string, { required = false, allowNegative = false } 
 }
 
 export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => void }) {
-  const { trades, tags, settings, reload } = useJournal();
+  const { trades, tags, settings } = useJournal();
   const editing = !!trade;
   const closed = trade?.status === 'closed';
   const [f, setF] = useState<FormState>(() =>
     initialState(trade, {
       structure: settings.last_structure ?? 'Stock Long',
-      setup_tag: settings.last_setup_tag && tags.some((t) => t.name === settings.last_setup_tag) ? settings.last_setup_tag : null,
+      setup_tag: settings.last_setup_tag && tags.includes(settings.last_setup_tag) ? settings.last_setup_tag : null,
     }),
   );
   const [more, setMore] = useState(editing);
@@ -180,12 +180,12 @@ export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => vo
     setSaving(true);
     setFormError(null);
     try {
-      const saved = editing ? await api.updateTrade(trade!.id, payload) : await api.createTrade(payload);
-      for (const p of shots.pending) await api.addShot(saved.id, p.blob, p.label, p.caption ?? '');
-      await reload();
+      let id = trade?.id;
+      if (editing) await api.updateTrade(id!, payload);
+      else id = await api.createTrade(payload);
+      for (const p of shots.pending) await api.addShot(id!, p.blob, p.label, p.caption ?? '');
       onClose();
     } catch (err) {
-      if (err instanceof ApiError && err.fields) setServerErrors(err.fields);
       setFormError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       inFlight.current = false;
@@ -255,7 +255,7 @@ export function TradeForm({ trade, onClose }: { trade?: Trade; onClose: () => vo
         {/* Encouraged */}
         <div className="space-y-3 rounded-lg bg-zinc-950/40 p-3">
           <Field label="Setup">
-            <ChipGroup options={tags.map((t) => t.name)} value={f.setup_tag} onChange={(v) => set('setup_tag', v)} allowNone ariaLabel="Setup" size="sm" />
+            <ChipGroup options={tags} value={f.setup_tag} onChange={(v) => set('setup_tag', v)} allowNone ariaLabel="Setup" size="sm" />
           </Field>
           <div className="flex flex-wrap gap-x-6 gap-y-3">
             <Field label="Grade">

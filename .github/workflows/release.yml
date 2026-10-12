@@ -1,0 +1,48 @@
+name: Build Windows installer
+
+# Every push to main builds the installer and publishes it as a GitHub Release
+# named after the version in package.json (bump the version for a new release).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - run: npm run typecheck
+
+      - name: Build installer
+        run: npm run dist
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: echo "v=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.v }}
+          name: Trading Journal ${{ steps.version.outputs.v }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: release/*.exe
+          body: |
+            Download **Trading Journal Setup ${{ steps.version.outputs.v }}.exe** below and run it.
+            Windows may say "Windows protected your PC" because the app isn't code-signed: click **More info → Run anyway**.

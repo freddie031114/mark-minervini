@@ -3,3 +3,7 @@ dist/
 data/
 .env
 *.log
+release/
+*.local
+firebase-debug.log
+firestore-debug.log

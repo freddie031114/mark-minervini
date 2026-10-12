@@ -1,8 +1,7 @@
-// Deterministic demo data. Every trade is flagged is_demo = 1 so it can be wiped safely.
-import fs from 'node:fs';
-import path from 'node:path';
+// Deterministic demo data. Every trade is flagged is_demo so it can be wiped safely.
+import type { TradeData } from './validate';
 
-function rng(seed) {
+function rng(seed: number) {
   let s = seed >>> 0;
   return () => {
     s = (s + 0x6d2b79f5) >>> 0;
@@ -13,14 +12,14 @@ function rng(seed) {
   };
 }
 
-const day = (d) => d.toISOString().slice(0, 10);
-const addDays = (d, n) => new Date(d.getTime() + n * 86_400_000);
+const day = (d: Date) => d.toISOString().slice(0, 10);
+const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86_400_000);
 
-const US = [['NVDA', 130], ['TSLA', 240], ['AAPL', 210], ['AMD', 150], ['META', 560], ['SPY', 570], ['PLTR', 45], ['MSFT', 420], ['AMZN', 185], ['CRWD', 330]];
+const US: [string, number][] = [['NVDA', 130], ['TSLA', 240], ['AAPL', 210], ['AMD', 150], ['META', 560], ['SPY', 570], ['PLTR', 45], ['MSFT', 420], ['AMZN', 185], ['CRWD', 330]];
 const TAGS = ['Breakout', 'Pullback', 'Base/VCP', 'Earnings', 'Catalyst', 'Reversal', 'Thesis/LEAP'];
 const EMO = ['Calm', 'Confident', 'FOMO', 'Revenge', 'Bored', 'Anxious'];
 
-function placeholderSvg(ticker, label, up) {
+export function placeholderSvg(ticker: string, label: string, up: boolean): string {
   const pts = [];
   let y = 120;
   for (let x = 0; x <= 600; x += 20) {
@@ -34,10 +33,10 @@ function placeholderSvg(ticker, label, up) {
 </svg>`;
 }
 
-export function buildDemo(today = new Date()) {
+export function buildDemo(today = new Date()): TradeData[] {
   const r = rng(42);
-  const pick = (a) => a[Math.floor(r() * a.length)];
-  const trades = [];
+  const pick = <T,>(a: readonly T[]): T => a[Math.floor(r() * a.length)];
+  const trades: TradeData[] = [];
   const N = 48;
   for (let i = 0; i < N; i++) {
     const [ticker, px] = pick(US);
@@ -60,7 +59,8 @@ export function buildDemo(today = new Date()) {
     const open = i >= N - 7;
     const hold = structure === 'LEAP Call' ? 30 + Math.floor(r() * 60) : 2 + Math.floor(r() * 18);
 
-    let entry, qty, stop, target, legs = null, expiry = null;
+    let entry: number, qty: number, stop: number | null, target: number | null;
+    let legs: string | null = null, expiry: string | null = null;
     if (!isOpt) {
       entry = +(px * (0.9 + r() * 0.2)).toFixed(2);
       qty = Math.max(1, Math.round(10000 / entry / 5) * 5);
@@ -89,7 +89,7 @@ export function buildDemo(today = new Date()) {
       expiry = day(addDays(today, [3, 9, 25, 40][i % 4]));
     }
 
-    const t = {
+    const t: TradeData = {
       ticker, structure, is_credit: isCredit,
       entry_price: entry, quantity: qty, entry_date: day(entryDate),
       setup_tag: tag, grade, planned, emotion,
@@ -103,7 +103,7 @@ export function buildDemo(today = new Date()) {
     if (!open) {
       const move = win ? 0.04 + r() * 0.25 : -(0.02 + r() * 0.12);
       const shortSide = structure === 'Stock Short' || isCredit;
-      let exit;
+      let exit: number;
       if (isOpt && !isCredit) exit = Math.max(0, entry * (1 + move * 3));
       else if (isCredit) exit = Math.max(0, entry * (win ? 0.2 + r() * 0.5 : 1.5 + r()));
       else exit = entry * (1 + (shortSide ? -move : move));
@@ -121,24 +121,4 @@ export function buildDemo(today = new Date()) {
     trades.push(t);
   }
   return trades;
-}
-
-/** Insert demo trades (plus a few placeholder chart images). */
-export function loadDemo(store, shotsDir) {
-  const trades = buildDemo();
-  store.tx(() => {
-    trades.forEach((t, i) => {
-      const id = store.insertTrade(t, { isDemo: true });
-      if (i % 6 === 0) {
-        const up = t.status === 'open' || (t.exit_price ?? 0) >= t.entry_price;
-        const labels = t.status === 'closed' ? ['Entry', 'Exit'] : ['Entry'];
-        for (const label of labels) {
-          const filename = `demo-${id}-${label.toLowerCase()}.svg`;
-          fs.writeFileSync(path.join(shotsDir, filename), placeholderSvg(t.ticker, label, up));
-          store.addScreenshot(id, filename, label, `${label} chart`);
-        }
-      }
-    });
-  });
-  return trades.length;
 }

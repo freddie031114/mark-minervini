@@ -4,15 +4,19 @@ import { Screenshots } from './Screenshots';
 import { TradeForm } from './TradeForm';
 import { toItem } from './CloseDialog';
 import { useJournal } from '../lib/store';
-import { api } from '../lib/api';
+import { api, subscribeShotImages } from '../lib/api';
 import { derive } from '../lib/derive';
 import { isTyping, money, num, pct, pnlClass, rFmt } from '../lib/format';
 import { isOption } from '../lib/calc';
 
-export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }) {
-  const { trades, reload, openClose } = useJournal();
+export function TradeDetail({ id, onClose }: { id: string; onClose: () => void }) {
+  const { trades, openClose } = useJournal();
   const [editing, setEditing] = useState(false);
+  const [images, setImages] = useState<Record<string, string>>({});
   const trade = trades.find((t) => t.id === id);
+
+  // Images are loaded per trade, only when its detail is open.
+  useEffect(() => subscribeShotImages(id, setImages), [id]);
 
   useEffect(() => {
     if (!trade) onClose();
@@ -25,9 +29,8 @@ export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }
 
   async function del() {
     if (!confirm(`Delete ${trade!.ticker} trade and its screenshots? This cannot be undone.`)) return;
-    await api.deleteTrade(trade!.id);
-    await reload();
     onClose();
+    await api.deleteTrade(trade!);
   }
 
   return (
@@ -111,15 +114,13 @@ export function TradeDetail({ id, onClose }: { id: number; onClose: () => void }
           </div>
 
           <Screenshots
-            items={trade.screenshots.map(toItem)}
+            items={trade.screenshots.map((s) => toItem(s, images))}
             context={trade.status === 'open' ? 'open' : 'close'}
             onAdd={async (blob, label, caption) => {
               await api.addShot(trade.id, blob, label, caption);
-              await reload();
             }}
             onDelete={async (item) => {
-              await api.deleteShot(Number(item.key));
-              await reload();
+              await api.deleteShot(trade, String(item.key));
             }}
           />
         </div>

@@ -1,16 +1,16 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 import { Modal } from './Modal';
 import { ChipGroup } from './ChipGroup';
-import { Screenshots, usePendingShots } from './Screenshots';
+import { Screenshots, usePendingShots, type ShotItem } from './Screenshots';
 import { Field, numError } from './TradeForm';
 import { useJournal } from '../lib/store';
 import { api } from '../lib/api';
 import { parseNum, pnl, pnlPct, rMultiple, holdingDays } from '../lib/calc';
 import { money, modKey, pct, pnlClass, rFmt, today } from '../lib/format';
-import { THESIS_RIGHT } from '../lib/types';
+import { THESIS_RIGHT, type Screenshot } from '../lib/types';
 
-export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }) {
-  const { trades, reload } = useJournal();
+export function CloseDialog({ id, onClose }: { id: string; onClose: () => void }) {
+  const { trades } = useJournal();
   const trade = trades.find((t) => t.id === id);
   const [exitPrice, setExitPrice] = useState('');
   const [exitDate, setExitDate] = useState(today());
@@ -50,7 +50,6 @@ export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }
         change_note: change.trim() || null,
       });
       for (const p of shots.pending) await api.addShot(id, p.blob, p.label, p.caption ?? '');
-      await reload();
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');
@@ -117,7 +116,7 @@ export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }
             }}
           />
         </Field>
-        <Screenshots items={shots.pending} extraHistory={trade.screenshots.map(toItem)} context="close" onAdd={shots.add} onDelete={shots.remove} compact />
+        <Screenshots items={shots.pending} extraHistory={trade.screenshots.map((s) => toItem(s))} context="close" onAdd={shots.add} onDelete={shots.remove} compact />
         {error && <div className="text-sm text-red-400">{error}</div>}
         <div className="flex items-center justify-between">
           <span className="text-xs text-zinc-500">
@@ -137,9 +136,10 @@ export function CloseDialog({ id, onClose }: { id: number; onClose: () => void }
   );
 }
 
-export const toItem = (s: { id: number; filename: string; label: string; caption: string | null }) => ({
+/** Screenshot metadata → grid item. `url` is the image data once loaded ('' while loading). */
+export const toItem = (s: Screenshot, images: Record<string, string> = {}): ShotItem => ({
   key: s.id,
-  url: `/screenshots/${encodeURIComponent(s.filename)}`,
-  label: s.label as never,
+  url: images[s.id] ?? '',
+  label: s.label,
   caption: s.caption,
 });

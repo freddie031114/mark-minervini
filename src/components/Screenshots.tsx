@@ -117,7 +117,11 @@ export function Screenshots({ items, context, onAdd, onDelete, extraHistory = []
           {items.map((s, i) => (
             <div key={s.key} className="group relative overflow-hidden rounded border border-zinc-800 bg-zinc-950">
               <button type="button" tabIndex={-1} className="block w-full" onClick={() => setLightbox(i)} title="Open full size">
-                <img src={s.url} alt={s.caption ?? s.label} className="h-20 w-full object-cover" />
+                {s.url ? (
+                  <img src={s.url} alt={s.caption ?? s.label} className="h-20 w-full object-cover" />
+                ) : (
+                  <div className="h-20 w-full animate-pulse bg-zinc-800" title="Loading…" />
+                )}
               </button>
               <div className="flex items-center justify-between gap-1 px-1.5 py-1 text-[11px]">
                 <span className="truncate">
@@ -155,7 +159,7 @@ export function Screenshots({ items, context, onAdd, onDelete, extraHistory = []
           }}
         />
       )}
-      {lightbox != null && items[lightbox] && (
+      {lightbox != null && items[lightbox]?.url && (
         <Lightbox items={items} index={lightbox} onIndex={setLightbox} onClose={() => setLightbox(null)} />
       )}
     </div>

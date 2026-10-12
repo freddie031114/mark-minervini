@@ -1,37 +1,69 @@
 {
   "name": "trading-journal",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "vite build && node --env-file-if-exists=.env server/index.js",
-    "serve": "node --env-file-if-exists=.env server/index.js",
+    "start": "vite build && electron .",
     "dev": "vite",
     "build": "vite build",
+    "dist": "vite build && electron-builder --win --publish never",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "express": "^4.21.2"
-  },
-  "optionalDependencies": {
-    "better-sqlite3": "^13.0.3"
+    "typecheck": "tsc --noEmit",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-journal"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3",
+    "firebase": "^13.0.0",
+    "firebase-tools": "^15.33.0",
     "postcss": "^8.4.49",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.15.0",
+    "sql.js": "^1.14.2",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
     "vitest": "^5.0.3"
   },
   "engines": {
-    "node": ">=22.9"
+    "node": ">=22"
+  },
+  "description": "Trading journal desktop app (Electron + Firebase)",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.freddie.tradingjournal",
+    "productName": "Trading Journal",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Trading Journal"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.png",
+      "category": "public.app-category.finance"
+    }
   }
 }

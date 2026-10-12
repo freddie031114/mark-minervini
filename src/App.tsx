@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { User } from 'firebase/auth';
+import { Gate } from './components/Gate';
 import { JournalProvider, useJournal } from './lib/store';
 import { anyModalOpen } from './components/Modal';
 import { TradeForm } from './components/TradeForm';
@@ -24,10 +26,22 @@ const pageFromHash = (): Page => {
 };
 
 export default function App() {
+  return <Gate>{(user) => <Journal_ user={user} />}</Gate>;
+}
+
+function Journal_({ user }: { user: User }) {
   const [page, setPage] = useState<Page>(pageFromHash);
   const [adding, setAdding] = useState(false);
-  const [detailId, setDetailId] = useState<number | null>(null);
-  const [closeId, setCloseId] = useState<number | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [closeId, setCloseId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Writes that fail after the UI moved on (e.g. rejected by the server) surface here.
+  useEffect(() => {
+    const on = (e: Event) => setToast((e as CustomEvent<string>).detail);
+    window.addEventListener('journal-error', on);
+    return () => window.removeEventListener('journal-error', on);
+  }, []);
 
   useEffect(() => {
     const on = () => setPage(pageFromHash());
@@ -61,7 +75,7 @@ export default function App() {
   }, []);
 
   return (
-    <JournalProvider actions={{ openAdd: () => setAdding(true), openDetail: setDetailId, openClose: setCloseId }}>
+    <JournalProvider user={user} actions={{ openAdd: () => setAdding(true), openDetail: setDetailId, openClose: setCloseId }}>
       <div className="flex min-h-screen">
         <aside className="sticky top-0 flex h-screen w-48 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950 px-3 py-4 max-md:w-36">
           <div className="mb-5 px-2 text-sm font-semibold tracking-wide text-zinc-100">Trading Journal</div>
@@ -96,6 +110,16 @@ export default function App() {
       {adding && <TradeForm onClose={() => setAdding(false)} />}
       {detailId != null && <TradeDetail id={detailId} onClose={() => setDetailId(null)} />}
       {closeId != null && <CloseDialog id={closeId} onClose={() => setCloseId(null)} />}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded border border-red-700 bg-red-950 px-4 py-3 text-sm text-red-200 shadow-xl">
+          <div className="flex gap-3">
+            <span>Couldn't save a change: {toast}</span>
+            <button className="text-red-400 hover:text-red-200" onClick={() => setToast(null)}>
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </JournalProvider>
   );
 }

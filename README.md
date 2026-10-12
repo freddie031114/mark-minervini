@@ -1,151 +1,128 @@
 # Trading Journal
 
-A fast, local, single-user trading journal for options (verticals, LEAPS) and stocks.
-It has no accounts and no cloud: everything lives in one folder on your laptop.
+A fast trading journal for options (verticals, LEAPS) and stocks, as a Windows desktop app.
+Sign in with your email and password, and your journal syncs between every computer you use.
+Your data is stored in **your own Firebase project** (Google's free app backend), not on anyone else's server.
 
-## Run it
+## 1. One-time Firebase setup (about 10 minutes)
 
-Requires Node.js 22.9 or newer (any current LTS).
+You do this **once**, not once per computer.
 
-```bash
-npm install && npm start
-```
-
-Then open **http://localhost:3000**. `npm start` builds the front end and starts the server.
-Later runs only need `npm start`. To skip the rebuild, use `npm run serve`.
-
-To use a different port, set `PORT`, for example `PORT=4000 npm start`.
-
-## Day-to-day use
-
-- **Start it:** `npm start` in the project folder, then open http://localhost:3000. Leave the terminal
-  open while you journal. Press Ctrl+C to stop it.
-- **Get updates:** `git pull && npm install && npm start`. Your data folder is never part of the code
-  (it's git-ignored), so updating never touches your trades.
-- **Using several computers?** See [Using it on several computers](#using-it-on-several-computers).
-
-### Windows: start with a double-click
-
-Double-click **`Start Journal.bat`** in the project folder. It starts the journal and opens your browser.
-For a desktop shortcut, right-click the file → **Show more options** → **Send to** → **Desktop (create shortcut)**.
-Close the black window (or press Ctrl+C in it) to stop the journal.
-
-## Where your data lives
-
-Everything is stored in one folder, `./data` by default:
-
-```
-data/
-  journal.db        SQLite database (trades, tags, settings)
-  screenshots/      image files referenced from the database
-```
-
-### Change the data folder
-
-Copy `.env.example` to `.env` in the project folder and set the path:
-
-```
-JOURNAL_DATA_DIR=~/Dropbox/TradingJournal
-```
-
-After that, `npm start` always uses that folder. `.env` stays on that computer and is never committed.
-You can also set `JOURNAL_DATA_DIR` as an environment variable. Settings → Data folder shows the folder in use.
-
-## Using it on several computers
-
-Install the app on each computer and point them all at **one shared folder** in Dropbox, Google Drive
-or iCloud Drive. Every computer then sees the same trades and screenshots.
-
-**One-time setup on each computer:**
-
-1. Install [Node.js](https://nodejs.org) (LTS) and [Git](https://git-scm.com).
-2. Get the app:
-   ```bash
-   git clone https://github.com/freddie031114/mark-minervini.git trading-journal
-   cd trading-journal
-   npm install
+1. Go to <https://console.firebase.google.com> and sign in with a Google account.
+2. **Create a project.** Click **Create a project** (or **Add project**), name it `trading-journal`, and click Continue.
+   Google Analytics isn't needed, so turn it off. Click **Create project**.
+3. **Turn on sign-in.** In the left menu, open **Build → Authentication** and click **Get started**.
+   Under **Sign-in method**, click **Email/Password**, switch on the first toggle (**Email/Password**), and **Save**.
+4. **Create the database.** Open **Build → Firestore Database** and click **Create database**.
+   - Choose a location near you, for example `australia-southeast1 (Sydney)`, and click Next.
+     The location can't be changed later.
+   - Choose **Start in production mode** and click **Create**.
+5. **Lock it down to your account.** Still in Firestore, open the **Rules** tab. Replace everything there with
+   the contents of [`firestore.rules`](firestore.rules) from this repo, then click **Publish**:
    ```
-3. Create `.env` (copy `.env.example`) with the shared folder, using that computer's path to it:
-   - Mac + Dropbox: `JOURNAL_DATA_DIR=~/Dropbox/TradingJournal`
-   - Mac + iCloud Drive: `JOURNAL_DATA_DIR=~/Library/Mobile Documents/com~apple~CloudDocs/TradingJournal`
-   - Windows + Dropbox: `JOURNAL_DATA_DIR=C:\Users\yourname\Dropbox\TradingJournal`
-4. Make sure the sync app keeps that folder **fully downloaded**, not online-only:
-   - iCloud: right-click the folder → **Keep Downloaded**.
-   - Dropbox / Google Drive: mark it **Available offline**.
-5. `npm start`, then open http://localhost:3000.
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{uid}/{document=**} {
+         allow read, write: if request.auth != null && request.auth.uid == uid;
+       }
+     }
+   }
+   ```
+   This means each signed-in person can only read and write their own journal.
+6. **Get the config.** Click the ⚙ gear next to **Project Overview** → **Project settings**. Under **Your apps**,
+   click the **`</>`** (Web) icon. Name it `desktop`, leave Hosting unticked, and click **Register app**.
+   You'll see a block starting with `const firebaseConfig = {`. Keep that page open.
+   You can find it again any time under Project settings → Your apps.
 
-**The rules that keep your data safe:**
+The free (Spark) plan is plenty: 1 GB of storage holds thousands of trades with screenshots. No card is needed.
 
-- **Run it on one computer at a time.** Stop it with **Ctrl+C** before you switch.
-- **Let the sync finish** (the sync icon goes quiet) before starting it on the other computer.
-- If you ever see a "conflicted copy" of `journal.db` in the folder, two computers wrote at once.
-  Keep the newer one and use Settings → Export/Import if you need to merge by hand.
+## 2. Install the app
 
-The app helps: every save goes straight into `journal.db` (no side files that could sync separately),
-Ctrl+C closes the database cleanly, and it refuses to start if the folder has screenshots but no
-database yet (the sync hasn't caught up), rather than creating an empty journal.
+1. Open the [latest release](../../releases/latest) and download **Trading Journal Setup x.y.z.exe**.
+2. Run it. Windows will probably say **"Windows protected your PC"**, because the app isn't code-signed.
+   Click **More info → Run anyway**.
+3. Open **Trading Journal** from the desktop shortcut or Start menu.
+4. **First launch on each computer:** paste the whole `firebaseConfig` block from step 1.6 and click Continue.
+5. **First time ever:** click **First time? Create account** and choose an email and password.
+   **On your other computers:** just sign in with the same email and password.
 
-## Backing up
+The app remembers you, so after that it opens straight into your journal.
 
-**Copy the whole data folder** (`journal.db` plus `screenshots/`) somewhere safe, ideally with the app stopped.
-To restore, copy it back, or point `JOURNAL_DATA_DIR` at the copy.
+## 3. Bring in your old journal (optional)
 
-In Settings you can also export:
+If you used the earlier local version: in the app, go to **Settings → Import old journal → Choose old journal folder…**
+and pick the folder that contains `journal.db` and `screenshots` (e.g. `Dropbox\TradingJournal`).
+Your trades, tags and screenshots are copied in. Demo trades are skipped, and running it twice won't duplicate anything.
 
-- **Export CSV**: one row per trade, including computed P&L, P&L %, R and holding days, and
-  screenshot filenames in a `screenshots` column. Use it with spreadsheets.
-- **Export JSON**: a full restore point for trades and tags.
-  **Import JSON** restores from it. The file is validated first, and nothing changes if it's wrong.
-  An import **replaces** all current trades. Screenshot images are not inside the JSON (only
-  their filenames are), so keep the `screenshots/` folder alongside it.
+## Everyday use
+
+- It's a normal app: open it, journal, close it.
+- **Several computers:** sign in on each. Changes show up on the others within a second or two.
+  Both can be open at once.
+- **Offline:** you can keep logging trades. They're saved on the computer and sync when you're back online.
+- **Updates:** download and run the newest installer from the [releases page](../../releases/latest).
+  Your data lives in Firebase, so reinstalling never touches it.
+
+## Backups
+
+Your data is in Firebase, which Google runs, but it's still worth keeping your own copy now and then:
+**Settings → Export JSON backup** saves everything, including screenshot images, to one file.
+**Restore from JSON…** brings it back (it replaces what's there). **Export CSV** gives a spreadsheet.
 
 ## Keyboard shortcuts
 
 | Key | Action |
 | --- | --- |
-| `N` | New trade (quick-add) |
+| `N` | New trade |
 | `/` | Focus search / filter (jumps to Journal) |
 | `↑` `↓` (or `j` `k`) | Select a row in Open positions / Journal |
 | `Enter` | Open the selected trade |
-| `C` | Close the selected open trade (also works inside trade detail) |
+| `C` | Close the selected open trade (also inside trade detail) |
 | `E` | Edit (inside trade detail) |
 | `Esc` | Close the top dialog |
-| `Cmd/Ctrl + Enter` | Save the current form |
+| `Ctrl + Enter` | Save the current form |
 | `Enter` in a single-line field | Save (except in Ticker, where it picks a suggestion) |
-| `Cmd/Ctrl + V` | Paste a screenshot into the open form / trade |
+| `Ctrl + V` | Paste a screenshot into the open form / trade |
 | `←` `→` | Move between chips (structure, setup, grade, …). `Backspace` clears an optional chip |
 
-In the screenshot label picker: `Enter` adds the image, `Esc` discards it, `Alt+1..4` picks Entry/Exit/Gamma/Other.
+In the screenshot label picker: `Enter` adds it, `Esc` discards it, `Alt+1..4` picks Entry/Exit/Gamma/Other.
 
-### Logging a trade in a few seconds
+## Screenshots
 
-`N` → type ticker → `Tab` → arrows for structure (last one is remembered) → `Tab` → price → `Tab` → quantity → `Ctrl/Cmd+Enter`.
+Pasted, dropped or chosen images are resized to at most 1920 px wide and compressed (WebP) so each one fits in a
+single Firestore document. They're typically 100 to 300 KB, sharp enough to read a chart. Images for a trade load
+only when you open that trade, so the app stays fast however many you have.
 
 ## How numbers are calculated
 
-All calculations are in `src/lib/calc.ts` (tested in `src/lib/calc.test.ts`, run `npm test`).
+All calculations are in `src/lib/calc.ts` (tested in `src/lib/calc.test.ts`).
 
 - Multiplier: 100 for options (Long Call/Put, Call/Put Spread, LEAP Call), 1 for stock and Other.
 - P&L, long/debit: `(exit − entry) × qty × multiplier − fees`.
 - P&L, credit spreads and Stock Short: `(entry − exit) × qty × multiplier − fees`.
 - P&L %: P&L ÷ (entry × qty × multiplier). For credit spreads, it's blank unless a stop is set (then P&L ÷ stop risk).
 - R: P&L ÷ (|entry − stop| × qty × multiplier), only when a stop is entered.
-- All amounts are in USD. Breakeven trades count as neither win nor loss.
-  Groups with fewer than 10 trades are marked "small sample".
+- All amounts are in USD. Breakeven trades count as neither win nor loss. Groups under 10 trades are marked "small sample".
 
-## Demo data
-
-Settings → **Load demo data** adds 48 flagged trades (marked DEMO).
-**Clear demo data** removes only those, along with their placeholder images, and never touches your own trades.
-
-## Development
+## For development
 
 ```bash
-npm run serve        # API on :3000 (serves the last build)
-npm run dev          # Vite dev server with hot reload on :5173 (proxies /api to :3000)
+npm install
+npm start            # build and open the desktop app
+npm run dev          # browser dev server with hot reload (http://localhost:5173)
 npm test             # unit tests
-npm run typecheck
+npm run emulators    # local Firebase emulators (needs Java); build with VITE_FIREBASE_EMULATOR=127.0.0.1 to use them
+npm run dist         # build the Windows installer (on Windows; CI does this automatically)
 ```
 
-The server uses `better-sqlite3`. If it can't be installed on your machine (it's an optional
-dependency), the server falls back to Node's built-in `node:sqlite` automatically.
+Every push to `main` builds the installer on GitHub Actions and publishes it as a release named after
+`version` in `package.json`. Bump the version for a new release.
+
+Data layout in Firestore:
+
+```
+users/{uid}/trades/{id}     trade fields + screenshot labels/captions
+users/{uid}/shots/{id}      one compressed image per document
+users/{uid}/meta/settings   setup tags + remembered form defaults
+```

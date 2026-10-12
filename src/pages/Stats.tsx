@@ -72,7 +72,7 @@ export function Stats() {
           </section>
 
           <div className="grid gap-4 xl:grid-cols-2">
-            <Breakdown title="By setup" items={items} keyOf={(t) => t.setup_tag} order={tags.map((t) => t.name)} />
+            <Breakdown title="By setup" items={items} keyOf={(t) => t.setup_tag} order={tags} />
             <Breakdown title="By grade" items={items} keyOf={(t) => t.grade} order={[...GRADES]} />
             <Breakdown title="Planned vs impulse" items={items} keyOf={(t) => yesNo(t.planned, 'Planned', 'Impulse')} order={['Planned', 'Impulse']} />
             <Breakdown title="By emotional state" items={items} keyOf={(t) => t.emotion} order={[...EMOTIONS]} />

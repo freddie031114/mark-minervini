@@ -16,17 +16,16 @@ export const THESIS_RIGHT = ['Yes', 'Partly', 'No'] as const;
 export const SHOT_LABELS = ['Entry', 'Exit', 'Gamma', 'Other'] as const;
 export type ShotLabel = (typeof SHOT_LABELS)[number];
 
+/** Screenshot metadata kept on the trade. The image itself lives in its own document. */
 export interface Screenshot {
-  id: number;
-  trade_id: number;
-  filename: string;
+  id: string;
   label: ShotLabel;
   caption: string | null;
   created_at: string;
 }
 
 export interface Trade {
-  id: number;
+  id: string;
   ticker: string;
   structure: Structure;
   is_credit: boolean;
@@ -53,17 +52,17 @@ export interface Trade {
   followed_plan: boolean | null;
   change_note: string | null;
   is_demo: boolean;
+  /** id from the old local (SQLite) journal, so importing twice never duplicates. */
+  legacy_id?: number | null;
   created_at: string;
   updated_at: string;
   screenshots: Screenshot[];
 }
 
-export interface Tag {
-  id: number;
-  name: string;
-}
-
 export interface Settings {
+  tags: string[];
   last_structure?: Structure;
   last_setup_tag?: string | null;
 }
+
+export const SEED_TAGS = ['Breakout', 'Pullback', 'Base/VCP', 'Earnings', 'Catalyst', 'Reversal', 'Thesis/LEAP'];

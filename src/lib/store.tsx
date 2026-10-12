@@ -1,44 +1,60 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api } from './api';
-import type { Settings, Tag, Trade } from './types';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { User } from 'firebase/auth';
+import { subscribeSettings, subscribeTrades } from './api';
+import { SEED_TAGS, type Settings, type Trade } from './types';
 
 interface Journal {
+  user: User;
   trades: Trade[];
-  tags: Tag[];
+  tags: string[];
   settings: Settings;
   loaded: boolean;
-  reload: () => Promise<void>;
   openAdd: () => void;
-  openDetail: (id: number) => void;
-  openClose: (id: number) => void;
+  openDetail: (id: string) => void;
+  openClose: (id: string) => void;
 }
 
 const Ctx = createContext<Journal | null>(null);
 export const useJournal = () => useContext(Ctx)!;
 
+/** Live view of the signed-in user's journal. Updates instantly, including from other computers. */
 export function JournalProvider({
+  user,
   children,
   actions,
 }: {
+  user: User;
   children: ReactNode;
   actions: Pick<Journal, 'openAdd' | 'openDetail' | 'openClose'>;
 }) {
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [settings, setSettings] = useState<Settings>({});
+  const [settings, setSettings] = useState<Settings>({ tags: SEED_TAGS });
   const [loaded, setLoaded] = useState(false);
-
-  const reload = useCallback(async () => {
-    const [t, g, s] = await Promise.all([api.trades(), api.tags(), api.settings()]);
-    setTrades(t);
-    setTags(g);
-    setSettings(s);
-    setLoaded(true);
-  }, []);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    reload().catch((e) => console.error(e));
-  }, [reload]);
+    const onErr = (e: Error) => setError(e.message);
+    const a = subscribeTrades((t) => {
+      setTrades(t);
+      setLoaded(true);
+    }, onErr);
+    const b = subscribeSettings(setSettings, onErr);
+    return () => {
+      a();
+      b();
+    };
+  }, [user.uid]);
 
-  return <Ctx.Provider value={{ trades, tags, settings, loaded, reload, ...actions }}>{children}</Ctx.Provider>;
+  if (error)
+    return (
+      <div className="m-8 max-w-xl rounded border border-red-700 bg-red-900/20 p-4 text-sm text-red-200">
+        <div className="font-medium">Couldn't load your journal.</div>
+        <div className="mt-1 text-red-300/80">{error}</div>
+        <div className="mt-2 text-xs text-red-300/70">
+          If this says "permission denied", the Firestore security rules haven't been set up yet (see the setup guide).
+        </div>
+      </div>
+    );
+
+  return <Ctx.Provider value={{ user, trades, tags: settings.tags, settings, loaded, ...actions }}>{children}</Ctx.Provider>;
 }
