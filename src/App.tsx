@@ -9,12 +9,14 @@ import { CloseDialog } from './components/CloseDialog';
 import { Home } from './pages/Home';
 import { Journal } from './pages/Journal';
 import { Stats } from './pages/Stats';
+import { Watchlist } from './pages/Watchlist';
 import { SettingsPage } from './pages/Settings';
 import { isTyping, modKey } from './lib/format';
 
 const PAGES = [
   { id: 'open', label: 'Open positions' },
   { id: 'journal', label: 'Journal' },
+  { id: 'watchlist', label: 'Watchlist' },
   { id: 'stats', label: 'Stats' },
   { id: 'settings', label: 'Settings' },
 ] as const;
@@ -128,6 +130,7 @@ function Screen({ page }: { page: Page }) {
   const { loaded } = useJournal();
   if (!loaded) return <div className="text-sm text-zinc-500">Loading…</div>;
   if (page === 'journal') return <Journal />;
+  if (page === 'watchlist') return <Watchlist />;
   if (page === 'stats') return <Stats />;
   if (page === 'settings') return <SettingsPage />;
   return <Home />;

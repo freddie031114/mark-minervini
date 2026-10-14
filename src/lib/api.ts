@@ -336,4 +336,4 @@ async function writeShot(tradeId: string, data: string, label: ShotLabel, captio
   await settle(b.commit());
 }
 
-export { commitOps, type Op };
+export { commitOps, settle, type Op };

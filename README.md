@@ -64,6 +64,21 @@ Your trades, tags and screenshots are copied in. Demo trades are skipped, and ru
 - **Updates:** download and run the newest installer from the [releases page](../../releases/latest).
   Your data lives in Firebase, so reinstalling never touches it.
 
+## Watchlist
+
+One compact row per ticker: support/resistance levels, the next GEX recheck and the earnings date.
+
+- **Add:** type a ticker in **+ Add ticker** and press Enter. The levels box opens straight away.
+- **Edit:** click any cell (or Tab to it and press Enter). Enter or clicking away saves, and Esc cancels.
+- **Levels** go on one line: `R 265-266 · S 248.5-250 (gap fill) · S 236`. Separate them with `·` or commas.
+  Put notes in brackets. They're shown as a price ladder (resistances, then supports, highest first).
+- **GEX recheck** takes a date and/or a note (e.g. "after monthly expiry", or just "before any entry").
+- **Sorting:** by whichever comes first, the GEX recheck or earnings. Tickers with neither date go last.
+- **Highlighting:** a row is highlighted when its GEX recheck is today or overdue, or when earnings are 14 days or fewer away.
+- **Archive** hides a ticker; it stays under **Archived** at the bottom, where **Restore** brings it back.
+- **Dates are US market dates.** "Today" and "days until" use New York's date, so on a Sydney morning
+  the app still counts from the previous US trading day.
+
 ## Backups
 
 Your data is in Firebase, which Google runs, but it's still worth keeping your own copy now and then:
